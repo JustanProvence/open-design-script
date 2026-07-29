@@ -1,6 +1,8 @@
 # open-design-script
 
-Automation script and Taskfile for cloning, building, running, exporting, and importing sessions for the [open-design](https://github.com/nexu-io/open-design) project.
+Taskfile configuration for cloning, building, running, exporting, and importing sessions for the [open-design](https://github.com/nexu-io/open-design) project.
+
+For bash script documentation, see [SCRIPT.md](SCRIPT.md).
 
 ## Prerequisites
 
@@ -10,100 +12,88 @@ Automation script and Taskfile for cloning, building, running, exporting, and im
 - **task** ([go-task](https://taskfile.dev/))
 - **tar**
 
-To check if all required tools are available in your environment:
+Check if required tools are installed:
 
 ```bash
 task check-prereqs
-# or
-./open-design.sh check-prereqs
 ```
 
-## Nominal Usage
-
-A helper bash script (`open-design.sh`) is provided to streamline common operations:
-
-### 1. Full Setup (Clone, Build, Export, Import)
-
-To execute the entire setup pipeline automatically:
+If `pnpm` is missing, you can install it via:
 
 ```bash
-./open-design.sh all
-```
-
-### 2. Individual Commands
-
-#### Clone Open Design
-Clone the repository into the target directory (default: `./build/open-design`):
-
-```bash
-./open-design.sh clone
-```
-
-#### Build
-Install dependencies and trigger required workspace/Electron builds:
-
-```bash
-./open-design.sh build
-```
-
-#### Export Local Sessions
-Export session data (`.od` directory) from a local instance to an export archive (`open-design-sessions.tar.gz`):
-
-```bash
-./open-design.sh export
-```
-
-#### Import Sessions
-Import session data into the target instance:
-
-```bash
-./open-design.sh import
-```
-
-#### Run Open Design
-Start open-design inside the target directory:
-
-```bash
-./open-design.sh run
+task install-pnpm
 ```
 
 ---
 
-## Options
+## Task Commands
 
-Customize directory paths using CLI flags:
+### 1. Check Prerequisites
+Verify system prerequisites (`git`, `node`, `pnpm`, `task`, `tar`):
 
-| Option | Flag | Description | Default |
-| --- | --- | --- | --- |
-| Target Directory | `-t, --target-dir` | Directory where `open-design` is cloned and built | `./build/open-design` |
-| Local Source Directory | `-s, --source-dir` | Local open-design directory for exporting sessions | `$HOME/.od` |
-| Export Archive Path | `-e, --export-path` | Archive output file path | `./open-design-sessions.tar.gz` |
+```bash
+task check-prereqs
+```
 
-### Custom Examples
+### 2. Clone Open Design
+Clone the repository into `TARGET_DIR` (default: `./build/open-design`):
+
+```bash
+task clone
+```
+
+### 3. Build Open Design
+Install dependencies and trigger required workspace/Electron builds inside `TARGET_DIR`:
+
+```bash
+task build
+```
+
+### 4. Export Local Sessions
+Export session data (`.od` directory) from a local open-design instance to `EXPORT_PATH` (default: `./open-design-sessions.tar.gz`):
+
+```bash
+task export
+```
+
+### 5. Import Sessions
+Import session data from `EXPORT_PATH` into `TARGET_DIR/.od`:
+
+```bash
+task import
+```
+
+### 6. Run Open Design
+Start open-design inside `TARGET_DIR`:
+
+```bash
+task run
+```
+
+---
+
+## Configuration Variables
+
+Tasks accept variables to customize directory locations and behavior:
+
+| Variable | Description | Default Value |
+| --- | --- | --- |
+| `TARGET_DIR` | Directory where open-design is cloned and built | `./build/open-design` |
+| `SOURCE_DIR` | Local directory containing `.od` session data for export | `./open-design` (falls back to `$HOME/.od`) |
+| `EXPORT_PATH` | File path for the session export archive | `./open-design-sessions.tar.gz` |
+| `APP` | Target application for `task run` | `""` (or `"web"` in headless environments) |
+
+### Custom Variable Examples
 
 ```bash
 # Clone and build in a custom directory
-./open-design.sh clone -t /path/to/custom-od
-./open-design.sh build -t /path/to/custom-od
+task clone TARGET_DIR=/path/to/custom-od
+task build TARGET_DIR=/path/to/custom-od
 
-# Export sessions from a custom location and import into custom target
-./open-design.sh export -s /path/to/local/.od -e ./my-sessions.tar.gz
-./open-design.sh import -t /path/to/custom-od -e ./my-sessions.tar.gz
+# Export sessions from a custom source directory and import into custom target
+task export SOURCE_DIR=/path/to/source-od EXPORT_PATH=./my-sessions.tar.gz
+task import TARGET_DIR=/path/to/custom-od EXPORT_PATH=./my-sessions.tar.gz
 
-# Run custom target
-./open-design.sh run -t /path/to/custom-od
-```
-
----
-
-## Direct `task` Usage
-
-You can also call `task` commands directly:
-
-```bash
-task clone TARGET_DIR=./build/open-design
-task build TARGET_DIR=./build/open-design
-task export SOURCE_DIR=~/.od EXPORT_PATH=./open-design-sessions.tar.gz
-task import TARGET_DIR=./build/open-design EXPORT_PATH=./open-design-sessions.tar.gz
-task run TARGET_DIR=./build/open-design
+# Run target instance
+task run TARGET_DIR=/path/to/custom-od
 ```
