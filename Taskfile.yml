@@ -12,6 +12,14 @@ tasks:
     cmds:
       - task --list
 
+  all:
+    desc: "Run clone, build, export, and import tasks sequentially"
+    cmds:
+      - task: clone
+      - task: build
+      - task: export
+      - task: import
+
   install-pnpm:
     desc: "Install pnpm if it is not found"
     cmds:

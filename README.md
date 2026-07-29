@@ -2,8 +2,6 @@
 
 Taskfile configuration for cloning, building, running, exporting, and importing sessions for the [open-design](https://github.com/nexu-io/open-design) project.
 
-For bash script documentation, see [SCRIPT.md](SCRIPT.md).
-
 ## Prerequisites
 
 - **Git**
@@ -28,7 +26,14 @@ task install-pnpm
 
 ## Task Commands
 
-### 1. Check Prerequisites
+### 1. Full Automated Setup Pipeline
+Sequentially execute `clone` -> `build` -> `export` -> `import`:
+
+```bash
+task all
+```
+
+### 2. Check Prerequisites
 Verify system prerequisites (`git`, `node`, `pnpm`, `task`, `tar`):
 
 ```bash
