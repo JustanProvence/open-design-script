@@ -12,11 +12,39 @@ tasks:
     cmds:
       - task --list
 
+  install-pnpm:
+    desc: "Install pnpm if it is not found"
+    cmds:
+      - |
+        if ! command -v pnpm &>/dev/null; then
+          echo "[task install-pnpm] pnpm is not installed. Installing pnpm..."
+          if command -v corepack &>/dev/null; then
+            echo "[task install-pnpm] Enabling corepack..."
+            corepack enable || npm install -g pnpm
+          elif command -v npm &>/dev/null; then
+            echo "[task install-pnpm] Installing pnpm via npm..."
+            npm install -g pnpm
+          elif command -v curl &>/dev/null; then
+            echo "[task install-pnpm] Installing pnpm via standalone installer script..."
+            curl -fsSL https://get.pnpm.io/install.sh | sh -
+          else
+            echo "Error: Unable to install pnpm automatically. Please install Node.js / npm manually." >&2
+            exit 1
+          fi
+        else
+          echo "[task install-pnpm] pnpm is already installed."
+        fi
+
   check-prereqs:
     desc: "Check if required prerequisites (git, node, pnpm, task, tar) are installed"
     cmds:
       - |
         echo "[task check-prereqs] Checking prerequisites..."
+        if ! command -v pnpm &>/dev/null; then
+          echo "[task check-prereqs] pnpm not found. Attempting automatic installation..."
+          task install-pnpm
+        fi
+
         MISSING=0
         for cmd in git node pnpm task tar; do
           if command -v "$cmd" &>/dev/null; then

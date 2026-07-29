@@ -34,7 +34,7 @@ EOF
 COMMAND=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        check|check-prereqs|clone|build|run|export|import|all)
+        check|check-prereqs|install-pnpm|clone|build|run|export|import|all)
             COMMAND="$1"
             shift
             ;;
@@ -84,6 +84,9 @@ run_task() {
 }
 
 case "$COMMAND" in
+    install-pnpm)
+        run_task install-pnpm
+        ;;
     check|check-prereqs)
         run_task check-prereqs
         ;;
