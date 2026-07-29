@@ -1,0 +1,97 @@
+version: '3'
+
+vars:
+  REPO_URL: 'https://github.com/nexu-io/open-design.git'
+  TARGET_DIR: '{{.TARGET_DIR | default "./build/open-design"}}'
+  SOURCE_DIR: '{{.SOURCE_DIR | default "./open-design"}}'
+  EXPORT_PATH: '{{.EXPORT_PATH | default "./open-design-sessions.tar.gz"}}'
+
+tasks:
+  default:
+    desc: "List available tasks"
+    cmds:
+      - task --list
+
+  clone:
+    desc: "Clone the open-design repository into TARGET_DIR"
+    cmds:
+      - |
+        if [ -d "{{.TARGET_DIR}}/.git" ]; then
+          echo "[task clone] Target directory '{{.TARGET_DIR}}' already contains a git repository."
+        else
+          echo "[task clone] Cloning {{.REPO_URL}} into {{.TARGET_DIR}}..."
+          mkdir -p "$(dirname "{{.TARGET_DIR}}")"
+          git clone --depth 1 {{.REPO_URL}} "{{.TARGET_DIR}}"
+          echo "[task clone] Clone completed successfully."
+        fi
+
+  build:
+    desc: "Build open-design inside TARGET_DIR"
+    deps: [clone]
+    dir: '{{.TARGET_DIR}}'
+    cmds:
+      - |
+        echo "[task build] Building open-design inside {{.TARGET_DIR}}..."
+        pnpm install
+        if [ -f "apps/desktop/node_modules/electron/install.js" ]; then
+          (cd apps/desktop && node node_modules/electron/install.js) || true
+        fi
+        if [ -f "apps/packaged/node_modules/electron/install.js" ]; then
+          (cd apps/packaged && node node_modules/electron/install.js) || true
+        fi
+        echo "[task build] Build completed successfully."
+
+  run:
+    desc: "Run open-design inside TARGET_DIR"
+    dir: '{{.TARGET_DIR}}'
+    cmds:
+      - |
+        echo "[task run] Starting open-design inside {{.TARGET_DIR}}..."
+        if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+          pnpm tools-dev {{.APP | default ""}}
+        else
+          echo "[task run] No display server detected (headless mode). Running daemon + web..."
+          pnpm tools-dev run {{.APP | default "web"}}
+        fi
+
+  export:
+    desc: "Export sessions from local open-design instance to archive"
+    cmds:
+      - |
+        SRC_OD=""
+        if [ -d "{{.SOURCE_DIR}}/.od" ]; then
+          SRC_OD="{{.SOURCE_DIR}}/.od"
+        elif [ -d "$HOME/.od" ]; then
+          SRC_OD="$HOME/.od"
+        elif [ -d "./.od" ]; then
+          SRC_OD="./.od"
+        fi
+
+        if [ -z "$SRC_OD" ]; then
+          echo "Error: Unable to locate .od session directory in '{{.SOURCE_DIR}}', '$HOME/.od', or './.od'." >&2
+          exit 1
+        fi
+
+        echo "[task export] Exporting sessions from $SRC_OD to {{.EXPORT_PATH}}..."
+        mkdir -p "$(dirname "{{.EXPORT_PATH}}")"
+        tar -czf "{{.EXPORT_PATH}}" -C "$(dirname "$SRC_OD")" "$(basename "$SRC_OD")"
+        echo "[task export] Sessions exported successfully to {{.EXPORT_PATH}}."
+
+  import:
+    desc: "Import exported sessions into open-design instance at TARGET_DIR"
+    cmds:
+      - |
+        if [ ! -f "{{.EXPORT_PATH}}" ]; then
+          echo "Error: Export archive '{{.EXPORT_PATH}}' not found." >&2
+          exit 1
+        fi
+
+        if [ ! -d "{{.TARGET_DIR}}" ]; then
+          echo "Error: Target directory '{{.TARGET_DIR}}' does not exist. Run 'task clone' first." >&2
+          exit 1
+        fi
+
+        echo "[task import] Importing session data into {{.TARGET_DIR}}/.od..."
+        rm -rf "{{.TARGET_DIR}}/.od"
+        tar -xzf "{{.EXPORT_PATH}}" -C "{{.TARGET_DIR}}"
+        echo "[task import] Sessions imported successfully into {{.TARGET_DIR}}/.od."
