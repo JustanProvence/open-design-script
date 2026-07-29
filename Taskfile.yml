@@ -12,8 +12,29 @@ tasks:
     cmds:
       - task --list
 
+  check-prereqs:
+    desc: "Check if required prerequisites (git, node, pnpm, task, tar) are installed"
+    cmds:
+      - |
+        echo "[task check-prereqs] Checking prerequisites..."
+        MISSING=0
+        for cmd in git node pnpm task tar; do
+          if command -v "$cmd" &>/dev/null; then
+            echo "  [✓] $cmd: $(command -v "$cmd") ($($cmd --version 2>&1 | head -n 1))"
+          else
+            echo "  [✗] $cmd: NOT FOUND"
+            MISSING=$((MISSING + 1))
+          fi
+        done
+        if [ "$MISSING" -gt 0 ]; then
+          echo "Error: $MISSING prerequisite(s) missing." >&2
+          exit 1
+        fi
+        echo "[task check-prereqs] All prerequisites satisfied."
+
   clone:
     desc: "Clone the open-design repository into TARGET_DIR"
+    deps: [check-prereqs]
     cmds:
       - |
         if [ -d "{{.TARGET_DIR}}/.git" ]; then

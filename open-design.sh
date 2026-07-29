@@ -13,6 +13,7 @@ usage() {
 Usage: $(basename "$0") [COMMAND] [OPTIONS]
 
 Commands:
+  check-prereqs Check if all required prerequisites are installed
   clone       Clone the open-design repository into TARGET_DIR
   build       Build open-design at TARGET_DIR
   run         Run open-design at TARGET_DIR
@@ -33,7 +34,7 @@ EOF
 COMMAND=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        clone|build|run|export|import|all)
+        check|check-prereqs|clone|build|run|export|import|all)
             COMMAND="$1"
             shift
             ;;
@@ -83,6 +84,9 @@ run_task() {
 }
 
 case "$COMMAND" in
+    check|check-prereqs)
+        run_task check-prereqs
+        ;;
     clone)
         run_task clone
         ;;

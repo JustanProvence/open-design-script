@@ -8,6 +8,15 @@ Automation script and Taskfile for cloning, building, running, exporting, and im
 - **Node.js** (v24 recommended)
 - **pnpm** (>= 10)
 - **task** ([go-task](https://taskfile.dev/))
+- **tar**
+
+To check if all required tools are available in your environment:
+
+```bash
+task check-prereqs
+# or
+./open-design.sh check-prereqs
+```
 
 ## Nominal Usage
 
