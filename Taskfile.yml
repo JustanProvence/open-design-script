@@ -22,6 +22,7 @@ tasks:
 
   install-pnpm:
     desc: "Install pnpm if it is not found"
+    run: once
     cmds:
       - |
         if ! command -v pnpm &>/dev/null; then
@@ -45,18 +46,19 @@ tasks:
 
   check-prereqs:
     desc: "Check if required prerequisites (git, node, pnpm, task, tar) are installed"
+    run: once
     cmds:
       - |
         echo "[task check-prereqs] Checking prerequisites..."
-        if ! command -v pnpm &>/dev/null; then
-          echo "[task check-prereqs] pnpm not found. Attempting automatic installation..."
-          task install-pnpm
-        fi
-
         MISSING=0
         for cmd in git node pnpm task tar; do
           if command -v "$cmd" &>/dev/null; then
-            echo "  [✓] $cmd: $(command -v "$cmd") ($($cmd --version 2>&1 | head -n 1))"
+            if version=$(timeout 10s env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 "$cmd" --version 2>&1); then
+              echo "  [✓] $cmd: $(command -v "$cmd") ($(printf '%s\n' "$version" | head -n 1))"
+            else
+              echo "  [✗] $cmd: version check failed or timed out"
+              MISSING=$((MISSING + 1))
+            fi
           else
             echo "  [✗] $cmd: NOT FOUND"
             MISSING=$((MISSING + 1))
