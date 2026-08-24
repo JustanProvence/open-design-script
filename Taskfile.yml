@@ -4,7 +4,7 @@ vars:
   REPO_URL: 'https://github.com/nexu-io/open-design.git'
   PNPM_VERSION: '10.33.2'
   TARGET_DIR: '{{.TARGET_DIR | default "./build/open-design"}}'
-  SOURCE_DIR: '{{.SOURCE_DIR | default "./open-design"}}'
+  SOURCE_DIR: '{{.SOURCE_DIR | default "./build/open-design"}}'
   EXPORT_PATH: '{{.EXPORT_PATH | default "./open-design-sessions.tar.gz"}}'
   OD_VERSION: 7af539b89c981b23c74f1af78b38d351f56540f8
 
@@ -52,13 +52,13 @@ tasks:
         fi
 
   check-prereqs:
-    desc: "Check if required prerequisites (git, node, pnpm, task, tar) are installed"
+    desc: "Check if required prerequisites (aws, git, node, npm, pnpm, task, tar) are installed"
     run: once
     cmds:
       - |
         echo "[task check-prereqs] Checking prerequisites..."
         MISSING=0
-        for cmd in git node pnpm task tar; do
+        for cmd in aws git node npm pnpm task tar; do
           if command -v "$cmd" &>/dev/null; then
             if version=$(timeout 10s env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 "$cmd" --version 2>&1); then
               echo "  [✓] $cmd: $(command -v "$cmd") ($(printf '%s\n' "$version" | head -n 1))"
@@ -87,13 +87,25 @@ tasks:
         else
           echo "[task clone] Cloning {{.REPO_URL}} into {{.TARGET_DIR}}..."
           mkdir -p "$(dirname "{{.TARGET_DIR}}")"
-          git clone --branch {{.OD_VERSION}} {{.REPO_URL}} "{{.TARGET_DIR}}"
+          git clone {{.REPO_URL}} "{{.TARGET_DIR}}"
+          cd "{{.TARGET_DIR}}"
+          git checkout "{{.OD_VERSION}}"
           echo "[task clone] Clone completed successfully."
         fi
 
+  codeartifact-login:
+    desc: "Authenticate npm with the oce-devops CodeArtifact repository"
+    deps: [check-prereqs]
+    status:
+      - |
+        REGISTRY=$(aws codeartifact get-repository-endpoint --domain oce-devops --repository npm --format npm --query repositoryEndpoint --output text 2>/dev/null)
+        [ -n "$REGISTRY" ] && [ "$REGISTRY" != "None" ] && npm ping --registry="$REGISTRY" &>/dev/null
+    cmds:
+      - aws codeartifact login --tool npm --repository npm --domain oce-devops
+
   build:
     desc: "Build open-design inside TARGET_DIR"
-    deps: [clone]
+    deps: [clone, codeartifact-login]
     dir: '{{.TARGET_DIR}}'
     cmds:
       - |
