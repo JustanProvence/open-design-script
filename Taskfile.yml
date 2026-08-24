@@ -4,7 +4,7 @@ vars:
   REPO_URL: 'https://github.com/nexu-io/open-design.git'
   PNPM_VERSION: '10.33.2'
   TARGET_DIR: '{{.TARGET_DIR | default "./build/open-design"}}'
-  SOURCE_DIR: '{{.SOURCE_DIR | default "./open-design"}}'
+  SOURCE_DIR: '{{.SOURCE_DIR | default "./build/open-design"}}'
   EXPORT_PATH: '{{.EXPORT_PATH | default "./open-design-sessions.tar.gz"}}'
   OD_VERSION: 7af539b89c981b23c74f1af78b38d351f56540f8
 
